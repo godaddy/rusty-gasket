@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: fmt + clippy + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the toolchain pinned in rust-toolchain.toml (+ rustfmt/clippy).
+      - name: Install Rust toolchain
+        run: rustup show
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy (warnings are errors)
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test
+        run: cargo test --workspace --all-targets --all-features
+
+  supply-chain:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: rustup show
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny
+      # `cargo deny check` runs the RustSec advisory scan (same database as
+      # cargo-audit) plus license, ban, and source policy in one pass. We run
+      # only cargo-deny to avoid two tools racing over ~/.cargo/advisory-db.
+      - name: cargo deny check (advisories, licenses, bans, sources)
+        run: cargo deny check
+
+  no-internal-refs:
+    name: no internal references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for leaked internal references
+        run: ./scripts/check-no-internal-refs.sh

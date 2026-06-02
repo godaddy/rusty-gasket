@@ -1,0 +1,117 @@
+# cargo-deny configuration for the rusty-gasket workspace.
+#
+# Run locally with:
+#   cargo install --locked cargo-deny
+#   cargo deny check
+#
+# Strict on the things that matter: security advisories, license
+# drift, wildcard or git dependencies, and untrusted source registries.
+
+[graph]
+all-features = true
+
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "deny"
+ignore = [
+    # All of the following are in rustls-webpki 0.101.x or a sibling on
+    # the rustls 0.21 stack, pulled in transitively only via
+    # aws-smithy-http-client / hyper-rustls 0.24. The fixes ship in
+    # rustls 0.22+ and are gated on AWS bumping their TLS stack. None
+    # of our code exercises CRL parsing, URI name constraints, or DSA
+    # via the AWS path. Remove these once the AWS SDK rolls a release
+    # using rustls >= 0.22.
+    "RUSTSEC-2023-0071", # Marvin Attack (RSA key recovery via timing) — DSA only
+    "RUSTSEC-2025-0134", # rustls-pemfile unmaintained — transitive only
+    "RUSTSEC-2026-0098", # webpki URI name constraints
+    "RUSTSEC-2026-0099", # webpki wildcard cert name constraints
+    "RUSTSEC-2026-0104", # rustls-webpki CRL parsing panic
+]
+
+[licenses]
+# Allow publish=false workspace crates (examples, xtask, gd overlays)
+# to skip the SPDX dance — they don't ship to crates.io.
+private = { ignore = true }
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "0BSD",
+    "CC0-1.0",
+    "MPL-2.0",
+    "BSL-1.0",
+    # webpki-roots ships under CDLA-Permissive-2.0 (a data-set license);
+    # accepting it lets the transitively-included webpki cert bundle
+    # through.
+    "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.93
+
+[[licenses.clarify]]
+# `ring` ships with a multi-license amalgam.
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+deny = [
+    # Standardize on rustls for TLS; openssl-sys pulls in libssl
+    # and a much larger audit surface.
+    { name = "openssl-sys" },
+]
+# Crates with known transitive duplicate versions that cargo-deny can
+# stop warning about. Most come from AWS SDK / jsonwebtoken /
+# axum-test pinning older `rustls`, `hyper`, `http`, `getrandom`, or
+# the RustCrypto stack. Removing them requires upstream releases —
+# we accept the duplication rather than fork.
+skip = [
+    { crate = "aws-smithy-http" },
+    { crate = "aws-smithy-json" },
+    { crate = "block-buffer" },
+    { crate = "const-oid" },
+    { crate = "cpufeatures" },
+    { crate = "crypto-common" },
+    { crate = "digest" },
+    { crate = "foldhash" },
+    { crate = "getrandom" },
+    { crate = "h2" },
+    { crate = "hashbrown" },
+    { crate = "hmac" },
+    { crate = "http" },
+    { crate = "http-body" },
+    { crate = "hyper" },
+    { crate = "hyper-rustls" },
+    { crate = "hyper-util" },
+    { crate = "rand" },
+    { crate = "rand_chacha" },
+    { crate = "rand_core" },
+    { crate = "rustls" },
+    { crate = "rustls-pemfile" },
+    { crate = "rustls-webpki" },
+    { crate = "sha2" },
+    { crate = "thiserror" },
+    { crate = "thiserror-impl" },
+    { crate = "tokio-rustls" },
+    { crate = "wasi" },
+    { crate = "webpki-roots" },
+    { crate = "windows-sys" },
+    { crate = "windows-targets" },
+    { crate = "zerocopy" },
+    { crate = "zerocopy-derive" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

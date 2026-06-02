@@ -1,0 +1,87 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rusty-gasket = { version = "0.1", features = ["auth"] }
+axum = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v7", "serde"] }
+
+[dev-dependencies]
+rusty-gasket = { version = "0.1", features = ["testing"] }
+pretty_assertions = "1.4"
+
+[lints.rust]
+unsafe_code = "forbid"
+future_incompatible = { level = "deny", priority = -1 }
+ambiguous_negative_literals = "warn"
+closure_returning_async_block = "warn"
+explicit_outlives_requirements = "warn"
+if_let_rescope = "warn"
+impl_trait_overcaptures = "warn"
+impl_trait_redundant_captures = "warn"
+let_underscore_drop = "warn"
+macro_use_extern_crate = "warn"
+meta_variable_misuse = "warn"
+missing_debug_implementations = "warn"
+noop_method_call = "warn"
+non_ascii_idents = "warn"
+redundant_lifetimes = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+single_use_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unit_bindings = "warn"
+unsafe_attr_outside_unsafe = "warn"
+unused = { level = "warn", priority = -1 }
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+unused_macro_rules = "warn"
+variant_size_differences = "warn"
+
+[lints.clippy]
+default_union_representation = "deny"
+exit = "deny"
+lossy_float_literal = "deny"
+mem_forget = "deny"
+multiple_inherent_impl = "deny"
+mut_mut = "deny"
+ptr_as_ptr = "deny"
+unwrap_in_result = "deny"
+unwrap_used = "deny"
+wildcard_dependencies = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+dbg_macro = "warn"
+empty_drop = "warn"
+fallible_impl_from = "warn"
+inefficient_to_string = "warn"
+macro_use_imports = "warn"
+cast_lossless = "warn"
+cast_possible_truncation = "warn"
+cast_possible_wrap = "warn"
+cast_precision_loss = "warn"
+cast_sign_loss = "warn"
+derivable_impls = "warn"
+match_same_arms = "warn"
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
+must_use_candidate = "warn"
+no_effect_underscore_binding = "warn"
+panic = "warn"
+print_stderr = "warn"
+print_stdout = "warn"
+same_name_method = "warn"
+single_char_lifetime_names = "warn"
+implicit_clone = "warn"
+trait_duplication_in_bounds = "warn"
+type_repetition_in_bounds = "warn"
+unneeded_field_pattern = "warn"
+unseparated_literal_suffix = "warn"
+used_underscore_binding = "warn"

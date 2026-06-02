@@ -1,0 +1,33 @@
+[package]
+name = "rusty-gasket-macros"
+description = "Proc macros for rusty-gasket (ApiError derive)"
+documentation = "https://docs.rs/rusty-gasket-macros"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+
+[package.metadata.cargo-machete]
+ignored = ["proc-macro2"]
+
+[lints]
+workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", default-features = false, features = [
+    "derive",
+    "parsing",
+    "printing",
+    "proc-macro",
+] }

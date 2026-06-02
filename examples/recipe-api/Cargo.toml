@@ -1,0 +1,22 @@
+[package]
+name = "recipe-api"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+rusty-gasket = { workspace = true, features = ["auth"] }
+
+axum = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+rusty-gasket = { workspace = true, features = ["testing"] }
+pretty_assertions = { workspace = true }
