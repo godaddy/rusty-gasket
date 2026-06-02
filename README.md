@@ -220,7 +220,8 @@ Application code depends only on `rusty-gasket`; optional functionality is turne
 | `otlp` | No | OpenTelemetry OTLP span + metric export |
 | `auth` | No | JWT auth backends, auth chain, middleware, and policy extractors |
 | `auth-api-key` | No | API-key auth backend in addition to JWT auth |
-| `aws` | No | AWS integration helpers |
+| `aws` | No | AWS integration helpers (Secrets Manager) |
+| `s3` | No | `S3ObjectStore`: get/put/head/list/presign + a streaming `download_response` helper |
 | `db` | No | Default SQL database integration (`db-postgres`) |
 | `db-postgres` | No | PostgreSQL SQLx integration, transaction middleware, `DbTx` extractor |
 | `db-mysql` | No | MySQL SQLx integration, transaction middleware, `DbTx` extractor |

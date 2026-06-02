@@ -38,6 +38,7 @@ otlp = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk", 
 auth = ["dep:jsonwebtoken", "dep:reqwest", "dep:url", "dep:arc-swap"]
 auth-api-key = ["auth", "dep:form_urlencoded"]
 aws = ["dep:aws-config", "dep:aws-sdk-secretsmanager"]
+s3 = ["aws", "dep:aws-sdk-s3", "dep:tokio-util", "dep:bytes"]
 db = ["db-postgres"]
 db-postgres = ["dep:sqlx", "sqlx/postgres"]
 db-mysql = ["dep:sqlx", "sqlx/mysql"]
@@ -81,6 +82,8 @@ arc-swap = { workspace = true, optional = true }
 aws-config = { workspace = true, optional = true }
 aws-sdk-secretsmanager = { workspace = true, optional = true }
 aws-sdk-dynamodb = { workspace = true, optional = true }
+aws-sdk-s3 = { workspace = true, optional = true }
+tokio-util = { workspace = true, optional = true }
 bytes = { workspace = true, optional = true }
 form_urlencoded = { workspace = true, optional = true }
 jsonwebtoken = { workspace = true, optional = true }
@@ -90,6 +93,14 @@ tower = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 
 [dev-dependencies]
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["localstack"] }
+aws-config = { workspace = true }
+aws-sdk-s3 = { workspace = true }
+aws-credential-types = { version = "1.2", features = ["test-util"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+serial_test = { version = "3", features = ["file_locks"] }
+bytes = { workspace = true }
 http-body-util = { workspace = true }
 pretty_assertions = { workspace = true }
 tempfile = "3"
