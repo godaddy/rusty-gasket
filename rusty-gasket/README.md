@@ -225,6 +225,8 @@ Application code depends only on `rusty-gasket`; optional functionality is turne
 | `db-postgres` | No | PostgreSQL SQLx integration, transaction middleware, `DbTx` extractor |
 | `db-mysql` | No | MySQL SQLx integration, transaction middleware, `DbTx` extractor |
 | `dynamodb` | No | DynamoDB lifecycle plugin and extractor |
+| `s3` | No | `S3ObjectStore`: get/put/head/list/presign + a streaming `download_response` helper |
+| `templates` | No | minijinja HTML templating: render to a `String` or an axum HTML response, autoescaped |
 | `testing` | No | `TestApp`, `TestResponse`, and in-process auth test helpers |
 
 ## Development

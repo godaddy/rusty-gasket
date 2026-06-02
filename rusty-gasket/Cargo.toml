@@ -44,6 +44,7 @@ db-postgres = ["dep:sqlx", "sqlx/postgres"]
 db-mysql = ["dep:sqlx", "sqlx/mysql"]
 dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
 testing = ["auth", "dep:tower", "dep:bytes"]
+templates = ["dep:minijinja"]
 
 [dependencies]
 rusty-gasket-macros = { workspace = true }
@@ -91,6 +92,7 @@ reqwest = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
 tower = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
+minijinja = { workspace = true, optional = true }
 
 [dev-dependencies]
 testcontainers = "0.27"
