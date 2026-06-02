@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-02
+
+### Added
+- **`s3` feature** — `S3ObjectStore`: get/put/head/list-by-prefix, a presigned
+  GET URL, and a streaming `download_response()` helper that serves an object
+  as an HTTP response without buffering the whole body in memory.
+- **`templates` feature** — minijinja-backed HTML templating. `Templates`
+  renders named templates (compiled in-memory via the builder, or loaded from a
+  directory) to a `String` or an autoescaped axum HTML response.
+
+## [0.1.0] - 2026-06-02
+
 ### Breaking changes
 - Builder setters renamed from `with_*` to bare names across the
   workspace: `AppConfigDefinition::{with_server, with_env}` →
