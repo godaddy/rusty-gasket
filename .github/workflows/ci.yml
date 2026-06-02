@@ -26,18 +26,19 @@ jobs:
         run: cargo test --workspace --all-targets --all-features
 
   supply-chain:
-    name: cargo-deny + cargo-audit
+    name: cargo-deny
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust toolchain
         run: rustup show
-      - name: Install cargo-deny + cargo-audit
-        run: cargo install --locked cargo-deny cargo-audit
-      - name: cargo deny
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny
+      # `cargo deny check` runs the RustSec advisory scan (same database as
+      # cargo-audit) plus license, ban, and source policy in one pass. We run
+      # only cargo-deny to avoid two tools racing over ~/.cargo/advisory-db.
+      - name: cargo deny check (advisories, licenses, bans, sources)
         run: cargo deny check
-      - name: cargo audit
-        run: cargo audit
 
   no-internal-refs:
     name: no internal references
