@@ -13,6 +13,12 @@ use rusty_gasket::BoxError;
 use rusty_gasket::config::{SecretValue, SecretsProvider};
 use tokio::sync::{RwLock, Semaphore};
 
+#[cfg(feature = "s3")]
+#[cfg_attr(docsrs, doc(cfg(feature = "s3")))]
+pub mod s3;
+#[cfg(feature = "s3")]
+pub use s3::{ObjectMeta, S3ObjectStore};
+
 /// Default cache TTL when [`AwsSecretsProvider::builder`] is not given
 /// an explicit one.
 const DEFAULT_CACHE_TTL: Duration = Duration::from_secs(300);
