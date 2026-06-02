@@ -1,0 +1,25 @@
+[package]
+name = "bench-api"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+rusty-gasket = { workspace = true }
+
+axum = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[[bench]]
+name = "throughput"
+harness = false
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+http-body-util = { workspace = true }
+tower = { workspace = true }

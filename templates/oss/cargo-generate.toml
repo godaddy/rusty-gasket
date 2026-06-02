@@ -1,0 +1,7 @@
+[template]
+name = "Rusty Gasket API"
+description = "A new Rust API service using the Rusty Gasket framework"
+
+[placeholders.project-name]
+type = "string"
+prompt = "Project name?"

@@ -1,0 +1,30 @@
+name: Publish
+
+# Publishes to crates.io on a version tag (e.g. v0.1.0). Requires the
+# CARGO_REGISTRY_TOKEN repository secret (a crates.io publish token).
+#
+# Order matters: rusty-gasket depends on rusty-gasket-macros, so the macro
+# crate is published first and we wait for the index to update before
+# publishing the framework crate. Re-tagging an already-published version
+# will fail (crates.io rejects duplicate versions) — bump the version first.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: cargo publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: rustup show
+      - name: Publish rusty-gasket-macros
+        run: cargo publish -p rusty-gasket-macros --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Wait for crates.io index
+        run: sleep 30
+      - name: Publish rusty-gasket
+        run: cargo publish -p rusty-gasket --token ${{ secrets.CARGO_REGISTRY_TOKEN }}

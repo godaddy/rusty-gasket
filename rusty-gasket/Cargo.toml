@@ -1,0 +1,102 @@
+[package]
+name = "rusty-gasket"
+description = "A plugin-based Rust framework for backend HTTP services"
+documentation = "https://docs.rs/rusty-gasket"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "README.md"
+
+[package.metadata.cargo-machete]
+ignored = ["built"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
+
+[features]
+default = ["json-log", "health", "rate-limit", "openapi", "cache"]
+json-log = []
+health = []
+rate-limit = ["dep:governor"]
+openapi = ["dep:utoipa", "dep:utoipa-swagger-ui"]
+cache = ["dep:moka"]
+cache-redis = ["cache", "dep:redis"]
+cache-memcached = ["cache", "dep:memcache-async"]
+otlp = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk", "dep:tracing-opentelemetry"]
+
+# Optional batteries (folded-in feature-gated modules)
+auth = ["dep:jsonwebtoken", "dep:reqwest", "dep:url", "dep:arc-swap"]
+auth-api-key = ["auth", "dep:form_urlencoded"]
+aws = ["dep:aws-config", "dep:aws-sdk-secretsmanager"]
+db = ["db-postgres"]
+db-postgres = ["dep:sqlx", "sqlx/postgres"]
+db-mysql = ["dep:sqlx", "sqlx/mysql"]
+dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
+testing = ["auth", "dep:tower", "dep:bytes"]
+
+[dependencies]
+rusty-gasket-macros = { workspace = true }
+
+axum = { workspace = true }
+built = { workspace = true }
+futures-util = { workspace = true }
+governor = { workspace = true, optional = true }
+http-body-util = { workspace = true }
+http = { workspace = true }
+memcache-async = { workspace = true, optional = true }
+moka = { workspace = true, optional = true }
+redis = { workspace = true, optional = true }
+secrecy = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml_ng = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+tower-http = { version = "0.6", features = ["compression-full", "cors", "limit", "timeout"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+
+utoipa = { workspace = true, optional = true }
+utoipa-swagger-ui = { workspace = true, optional = true }
+
+opentelemetry = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+
+# Battery deps (optional, enabled by the feature-gated modules above)
+arc-swap = { workspace = true, optional = true }
+aws-config = { workspace = true, optional = true }
+aws-sdk-secretsmanager = { workspace = true, optional = true }
+aws-sdk-dynamodb = { workspace = true, optional = true }
+bytes = { workspace = true, optional = true }
+form_urlencoded = { workspace = true, optional = true }
+jsonwebtoken = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true }
+tower = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
+
+[dev-dependencies]
+http-body-util = { workspace = true }
+pretty_assertions = { workspace = true }
+tempfile = "3"
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["test-util", "macros"] }
+tower = { workspace = true }
+trybuild = "1"
+
+[build-dependencies]
+built = { workspace = true }
