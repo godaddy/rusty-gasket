@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-02
+
+### Added
+- **Named protected auth chains** — `RouteGroup::ProtectedWith("name")` lets
+  different endpoints authenticate with different chains in one service
+  (e.g. a static-token push endpoint alongside JWT-protected and public
+  routes). Register a named chain with `GasketAppBuilder::auth_chain(name,
+  state)`; named-protected routes get the full protected middleware stack with
+  the named chain substituted for the default authentication layer.
+- **`StaticBearerBackend`** (`auth` feature) — an `AuthBackend` that
+  constant-time-compares the `Authorization: Bearer` token against one
+  configured secret. Backed by `subtle` for the comparison.
+
 ## [0.1.1] - 2026-06-02
 
 ### Added
