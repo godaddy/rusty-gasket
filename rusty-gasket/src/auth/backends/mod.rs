@@ -14,3 +14,7 @@ pub mod api_key;
 /// Static shared-secret Bearer token authentication backend.
 #[cfg(feature = "auth")]
 pub mod static_bearer;
+
+/// Static shared-credential HTTP Basic authentication backend.
+#[cfg(feature = "auth")]
+pub mod basic_auth;
