@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-03
+
+### Added
+- **`BasicAuthBackend`** (`auth` feature) — an `AuthBackend` for the HTTP Basic
+  scheme that constant-time-compares both the username and password from
+  `Authorization: Basic <base64(user:pass)>` against one configured credential
+  (held in `secrecy::SecretString`, redacted from `Debug`). For human-facing
+  internal pages (admin/diagnostics views, staging gates) guarded by a single
+  shared password. Pairs with `RouteGroup::ProtectedWith` like
+  `StaticBearerBackend`. Follows the chain contract: defers (`Ok(None)`) when no
+  Basic credential is present, definitive failure when one is present but wrong.
+
 ## [0.1.2] - 2026-06-02
 
 ### Added
