@@ -25,6 +25,7 @@ pub use audit::{
 };
 pub use backend::{AuthBackend, AuthBackendHandle, BoxAuthBackend};
 pub use backends::jwt::{JwtBackend, JwtBackendBuilder};
+pub use backends::static_bearer::StaticBearerBackend;
 pub use chain::{AuthChain, UnauthenticatedPolicy};
 pub use context::{AuthContext, AuthResult, FailedReason};
 pub use error::AuthError;
@@ -44,6 +45,7 @@ pub use rusty_gasket::BoxError;
 pub mod prelude {
     pub use rusty_gasket::BoxError;
     pub use rusty_gasket::auth::backend::{AuthBackend, AuthBackendHandle};
+    pub use rusty_gasket::auth::backends::static_bearer::StaticBearerBackend;
     pub use rusty_gasket::auth::chain::{AuthChain, UnauthenticatedPolicy};
     pub use rusty_gasket::auth::error::AuthError;
     pub use rusty_gasket::auth::extractors::{

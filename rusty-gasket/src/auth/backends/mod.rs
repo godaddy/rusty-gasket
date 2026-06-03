@@ -10,3 +10,7 @@ pub mod jwt;
 /// API key authentication backend (header or query parameter).
 #[cfg(feature = "auth-api-key")]
 pub mod api_key;
+
+/// Static shared-secret Bearer token authentication backend.
+#[cfg(feature = "auth")]
+pub mod static_bearer;
