@@ -83,12 +83,28 @@ impl std::fmt::Debug for RouterTransform {
 ///   docs, and Swagger UI.
 /// - `Protected` — full middleware stack: logging, request body limit,
 ///   plus the per-plugin layers (auth, rate limiting, transactions, ...).
+///   Every `Protected` route shares the one global authentication chain
+///   contributed at the [`MiddlewareSlot::Authentication`] slot.
+/// - `ProtectedWith(name)` — the same full middleware stack as
+///   `Protected`, except the global authentication layer is replaced by a
+///   *named* authentication chain registered on the builder via
+///   [`GasketAppBuilder::auth_chain`]. This lets different endpoints sit
+///   behind different credentials (e.g. one route behind a static shared
+///   Bearer token, another behind the normal user chain) while still
+///   inheriting logging, the request body limit, and every other
+///   protected-slot layer. Building the router panics if `name` has no
+///   registered chain, so a typo fails loudly at startup rather than
+///   silently serving the route unauthenticated. The payload is
+///   `&'static str` to keep this enum `Copy`. Requires the `auth` feature.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum RouteGroup {
     Bare,
     Public,
     Protected,
+    /// Protected by a named authentication chain instead of the global one.
+    /// See the enum-level docs for the full semantics.
+    ProtectedWith(&'static str),
 }
 
 /// A middleware layer tagged with the pipeline slot it belongs to.

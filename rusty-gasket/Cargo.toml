@@ -35,7 +35,7 @@ cache-memcached = ["cache", "dep:memcache-async"]
 otlp = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk", "dep:tracing-opentelemetry"]
 
 # Optional batteries (folded-in feature-gated modules)
-auth = ["dep:jsonwebtoken", "dep:reqwest", "dep:url", "dep:arc-swap"]
+auth = ["dep:jsonwebtoken", "dep:reqwest", "dep:url", "dep:arc-swap", "dep:subtle"]
 auth-api-key = ["auth", "dep:form_urlencoded"]
 aws = ["dep:aws-config", "dep:aws-sdk-secretsmanager"]
 s3 = ["aws", "dep:aws-sdk-s3", "dep:tokio-util", "dep:bytes"]
@@ -90,6 +90,7 @@ form_urlencoded = { workspace = true, optional = true }
 jsonwebtoken = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
+subtle = { workspace = true, optional = true }
 tower = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 minijinja = { workspace = true, optional = true }
