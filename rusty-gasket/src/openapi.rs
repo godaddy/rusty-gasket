@@ -12,8 +12,7 @@
 mod inner {
     use std::sync::Arc;
 
-    use axum::routing::get;
-    use axum::{Json, Router};
+    use axum::Router;
 
     use crate::plugin::{Plugin, PluginOrdering, RouteContext, RouteGroup, TaggedRoute};
 
@@ -85,28 +84,23 @@ mod inner {
         }
 
         fn routes(&self, _ctx: &RouteContext) -> Vec<TaggedRoute> {
-            let spec_for_json = Arc::clone(&self.spec);
-            let spec_route = Router::new().route(
-                "/openapi.json",
-                get(move || {
-                    let s = Arc::clone(&spec_for_json);
-                    async move { Json(s) }
-                }),
-            );
-
-            // Swagger UI consumes the spec by value; clone the inner OpenApi
-            // out of the Arc once at startup. The per-request `/openapi.json`
-            // path is the hot loop; this construction runs only at boot.
+            // `SwaggerUi::url(path, spec)` registers *two* things: the
+            // interactive UI at `/swagger-ui`, and a `GET {path}` handler that
+            // serves the spec JSON (as `Json(Arc<…>)`, so each request still
+            // only pays an atomic refcount bump). It therefore already provides
+            // `GET /openapi.json` — registering a second `/openapi.json` route
+            // here would make axum's router merge panic at startup with
+            // "Overlapping method route. Handler for `GET /openapi.json`
+            // already exists". So the spec is registered exactly once, via the
+            // Swagger UI builder. The inner `OpenApi` is cloned out of the Arc
+            // once at startup (Swagger UI consumes it by value).
             let swagger_route = {
                 let swagger_ui = utoipa_swagger_ui::SwaggerUi::new("/swagger-ui")
                     .url("/openapi.json", (*self.spec).clone());
                 Router::new().merge(swagger_ui)
             };
 
-            vec![
-                TaggedRoute::new(RouteGroup::Public, spec_route),
-                TaggedRoute::new(RouteGroup::Public, swagger_route),
-            ]
+            vec![TaggedRoute::new(RouteGroup::Public, swagger_route)]
         }
     }
 }

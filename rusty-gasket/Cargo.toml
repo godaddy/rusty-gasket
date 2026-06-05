@@ -112,6 +112,10 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["test-util", "macros"] }
 tower = { workspace = true }
 trybuild = "1"
+# For the `openapi` integration test: derive a minimal `ApiDoc` and feed it to
+# `OpenApiPlugin::from_api_doc`. The `openapi` feature (default-on) already pulls
+# utoipa in for the library; this makes the derive available to the test crate.
+utoipa = { workspace = true }
 
 [build-dependencies]
 built = { workspace = true }
