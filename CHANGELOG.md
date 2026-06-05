@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-05
+
+### Fixed
+- **`OpenApiPlugin` no longer panics at startup.** `OpenApiPlugin::routes()`
+  registered `GET /openapi.json` twice — once as an explicit spec route and
+  once via the Swagger-UI `.url("/openapi.json", spec)` builder (which itself
+  routes the spec) — so `build_router` panicked with "Overlapping method route.
+  Handler for `GET /openapi.json` already exists", crashing every service that
+  registered the plugin. The spec is now registered exactly once via the
+  Swagger-UI builder; `GET /openapi.json` and `/swagger-ui` behave as before.
+
 ## [0.1.3] - 2026-06-03
 
 ### Added
