@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-05
+
+### Added
+- **`ForwardedIpKey`** (`rate-limit` feature) — a `RateLimitKey` that derives the
+  client IP from the `X-Forwarded-For` header for services behind a trusted
+  reverse proxy / load balancer, where `IpAddressKey` (the socket peer) would
+  collapse every caller into one bucket. Takes the entry `trusted_hops`
+  positions from the **right** (left entries are client-spoofable), with a
+  configurable hop count (`ForwardedIpKey::new(n)`, default `1`), and falls back
+  to the `ConnectInfo` peer when the header is absent, too short, or malformed.
+
 ## [0.1.4] - 2026-06-05
 
 ### Fixed

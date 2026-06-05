@@ -310,16 +310,124 @@ mod inner {
         }
     }
 
-    /// Rate limit by client IP address (from `ConnectInfo`).
+    /// The socket peer IP from [`ConnectInfo`](axum::extract::ConnectInfo), if
+    /// present. This is the address of whoever opened the TCP connection — the
+    /// reverse proxy / load balancer when one sits in front of the service.
+    fn connect_info_ip(parts: &http::request::Parts) -> Option<String> {
+        parts
+            .extensions
+            .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
+            .map(|ci| ci.0.ip().to_string())
+    }
+
+    /// Parse a single `X-Forwarded-For` entry into a canonical IP string.
+    /// Accepts a bare `IpAddr` (IPv4 or IPv6) or an `ip:port` / `[ipv6]:port`
+    /// form, returning the IP without the port. Returns `None` for anything
+    /// that is not a valid address, so a malformed or forged entry triggers the
+    /// caller's safe fallback rather than becoming a bogus rate-limit key.
+    fn parse_forwarded_ip(raw: &str) -> Option<String> {
+        let raw = raw.trim();
+        if let Ok(ip) = raw.parse::<std::net::IpAddr>() {
+            return Some(ip.to_string());
+        }
+        if let Ok(sa) = raw.parse::<std::net::SocketAddr>() {
+            return Some(sa.ip().to_string());
+        }
+        None
+    }
+
+    /// Rate limit by the socket peer IP (from `ConnectInfo`).
+    ///
+    /// Note: behind a reverse proxy or load balancer this is the *proxy's*
+    /// address, so every caller collapses into one bucket. Use
+    /// [`ForwardedIpKey`] when the service runs behind a trusted proxy.
     #[derive(Debug, Clone)]
     pub struct IpAddressKey;
 
     impl RateLimitKey for IpAddressKey {
         fn extract_key(&self, parts: &http::request::Parts) -> Option<String> {
-            parts
-                .extensions
-                .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
-                .map(|ci| ci.0.ip().to_string())
+            connect_info_ip(parts)
+        }
+    }
+
+    /// Rate limit by the real client IP read from the `X-Forwarded-For` header.
+    ///
+    /// Behind a reverse proxy / load balancer (e.g. an AWS ALB) the socket peer
+    /// seen via [`ConnectInfo`](axum::extract::ConnectInfo) is the *proxy*, so
+    /// [`IpAddressKey`] would collapse every caller into a single global bucket.
+    /// This key instead reads the client address the proxy recorded in
+    /// `X-Forwarded-For`.
+    ///
+    /// # Trusting the header
+    ///
+    /// `X-Forwarded-For` is a comma-separated, oldest-first list: each proxy
+    /// *appends* the address it received the connection from, so the right-most
+    /// entries are added by infrastructure you control and the left-most entries
+    /// are whatever the original client sent — fully spoofable. Taking the
+    /// left-most entry would let any caller forge their rate-limit key and evade
+    /// the limit.
+    ///
+    /// So this key takes the entry `trusted_hops` positions **from the right**,
+    /// where `trusted_hops` is the number of trusted proxies between this service
+    /// and the public internet (`1` for a single ALB / ingress). With
+    /// `trusted_hops == 1` it takes the last entry — the address the trusted
+    /// proxy observed as the client. If the header is absent, has fewer than
+    /// `trusted_hops` entries, or the selected entry is not a valid IP, it falls
+    /// back to the `ConnectInfo` peer (the proxy itself): coarse, but never
+    /// spoofable.
+    ///
+    /// `trusted_hops` must match the deployment — too low trusts a hop you do not
+    /// control (spoofable); too high always falls back to the proxy IP (one
+    /// global bucket). It cannot compensate for a proxy that forwards a
+    /// client-supplied `X-Forwarded-For` verbatim instead of appending.
+    #[derive(Debug, Clone)]
+    pub struct ForwardedIpKey {
+        trusted_hops: usize,
+    }
+
+    impl ForwardedIpKey {
+        /// Build a key that trusts `trusted_hops` proxies in front of the
+        /// service (reads the right-most `trusted_hops`-th `X-Forwarded-For`
+        /// entry). `trusted_hops` is clamped to at least 1.
+        #[must_use]
+        pub fn new(trusted_hops: usize) -> Self {
+            Self {
+                trusted_hops: trusted_hops.max(1),
+            }
+        }
+    }
+
+    /// Defaults to a single trusted proxy (one ALB / ingress in front).
+    impl Default for ForwardedIpKey {
+        fn default() -> Self {
+            Self::new(1)
+        }
+    }
+
+    impl RateLimitKey for ForwardedIpKey {
+        fn extract_key(&self, parts: &http::request::Parts) -> Option<String> {
+            // All `X-Forwarded-For` values, in header order, flattened into one
+            // oldest-first list: "client, proxy1, proxy2, ...".
+            let xff = http::HeaderName::from_static("x-forwarded-for");
+            let entries: Vec<&str> = parts
+                .headers
+                .get_all(&xff)
+                .iter()
+                .filter_map(|v| v.to_str().ok())
+                .flat_map(|v| v.split(','))
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            // Take the entry `trusted_hops` from the right (the address the
+            // closest trusted proxy observed). Left entries are client-spoofable.
+            // Anything anomalous falls back to the socket peer.
+            entries
+                .len()
+                .checked_sub(self.trusted_hops)
+                .and_then(|idx| entries.get(idx))
+                .and_then(|candidate| parse_forwarded_ip(candidate))
+                .or_else(|| connect_info_ip(parts))
         }
     }
 
@@ -398,7 +506,132 @@ mod inner {
 
     #[cfg(test)]
     mod tests {
+        #![allow(clippy::unwrap_used, clippy::panic)]
+
         use super::*;
+
+        use std::net::SocketAddr;
+
+        /// Build request `Parts` with the given `X-Forwarded-For` header values
+        /// (each may itself be a comma-separated list) and an optional socket
+        /// peer in `ConnectInfo`.
+        fn parts_with(xff: &[&str], peer: Option<SocketAddr>) -> http::request::Parts {
+            let mut builder = http::Request::builder();
+            for v in xff {
+                builder = builder.header("x-forwarded-for", *v);
+            }
+            let mut req = builder.body(()).unwrap();
+            if let Some(p) = peer {
+                req.extensions_mut().insert(axum::extract::ConnectInfo(p));
+            }
+            req.into_parts().0
+        }
+
+        fn peer(s: &str) -> SocketAddr {
+            s.parse().unwrap()
+        }
+
+        #[test]
+        fn forwarded_key_takes_rightmost_entry_for_single_hop() {
+            // One trusted proxy (the ALB): the last entry is the address the ALB
+            // saw; the left entry is client-supplied and must be ignored.
+            let parts = parts_with(&["1.2.3.4, 5.6.7.8"], Some(peer("10.0.0.1:443")));
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&parts).as_deref(),
+                Some("5.6.7.8")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_ignores_spoofed_left_entries() {
+            // A forged left-most entry must not become the key.
+            let parts = parts_with(&["evil-spoof, 9.9.9.9"], Some(peer("10.0.0.1:443")));
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&parts).as_deref(),
+                Some("9.9.9.9")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_multi_hop_skips_trusted_proxies() {
+            // Two trusted proxies (CDN + ALB): skip the two right-most entries
+            // they added and take the client address (index len - 2).
+            let parts = parts_with(&["evil, 203.0.113.7, 10.0.0.1"], Some(peer("10.0.0.2:443")));
+            assert_eq!(
+                ForwardedIpKey::new(2).extract_key(&parts).as_deref(),
+                Some("203.0.113.7")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_flattens_multiple_headers() {
+            // Multiple X-Forwarded-For headers concatenate oldest-first.
+            let parts = parts_with(&["1.1.1.1", "2.2.2.2, 3.3.3.3"], Some(peer("10.0.0.1:1")));
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&parts).as_deref(),
+                Some("3.3.3.3")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_falls_back_to_peer_when_header_absent() {
+            let parts = parts_with(&[], Some(peer("192.0.2.5:1234")));
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&parts).as_deref(),
+                Some("192.0.2.5")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_falls_back_when_fewer_entries_than_trusted_hops() {
+            // Expected 3 trusted proxies but only one entry present — anomalous,
+            // so fall back to the socket peer rather than trusting it.
+            let parts = parts_with(&["8.8.8.8"], Some(peer("10.0.0.9:80")));
+            assert_eq!(
+                ForwardedIpKey::new(3).extract_key(&parts).as_deref(),
+                Some("10.0.0.9")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_falls_back_on_malformed_selected_entry() {
+            let parts = parts_with(&["1.2.3.4, not-an-ip"], Some(peer("10.0.0.2:80")));
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&parts).as_deref(),
+                Some("10.0.0.2")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_accepts_ipv6_and_ip_port_forms() {
+            let v6 = parts_with(&["[2001:db8::1]:443"], None);
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&v6).as_deref(),
+                Some("2001:db8::1")
+            );
+            let v4_port = parts_with(&["1.1.1.1, 9.9.9.9:8080"], None);
+            assert_eq!(
+                ForwardedIpKey::default().extract_key(&v4_port).as_deref(),
+                Some("9.9.9.9")
+            );
+        }
+
+        #[test]
+        fn forwarded_key_none_without_header_or_peer() {
+            // No header and no ConnectInfo → no key → middleware skips limiting.
+            let parts = parts_with(&[], None);
+            assert_eq!(ForwardedIpKey::default().extract_key(&parts), None);
+        }
+
+        #[test]
+        fn new_clamps_zero_trusted_hops_to_one() {
+            // 0 would underflow the right-index math; clamp to a single hop.
+            let parts = parts_with(&["1.2.3.4, 5.6.7.8"], None);
+            assert_eq!(
+                ForwardedIpKey::new(0).extract_key(&parts).as_deref(),
+                Some("5.6.7.8")
+            );
+        }
 
         /// Verifies that dropping the public `RateLimiter` aborts the
         /// background cleanup task. We observe this through the Arc
