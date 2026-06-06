@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-06-06
+
+### Added
+- **`tls` feature** — serve over TLS (rustls, via `axum-server`) instead of
+  plaintext when `ServerConfig.tls` is set. New `TlsConfig::from_pem(cert, key)`
+  and `ServerConfig::with_tls(..)`; key material is supplied programmatically
+  (never (de)serialized from the config file) and redacted in `Debug`. The TLS
+  serve path preserves both graceful shutdown and `SocketAddr` connect-info
+  (so e.g. `ForwardedIpKey` rate limiting keeps working). Off by default — the
+  plaintext serve path is unchanged when the feature is disabled or `tls` is
+  unset. Intended for callers that terminate TLS themselves (e.g. a backend
+  cert for a load-balancer→task hop).
+
 ## [0.1.5] - 2026-06-05
 
 ### Added

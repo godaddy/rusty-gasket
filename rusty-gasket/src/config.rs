@@ -56,6 +56,12 @@ pub struct ServerConfig {
     /// Bind port for the HTTP server (default: `PORT` env var or `8443`).
     #[serde(default = "default_port")]
     pub port: u16,
+    /// When set (and the `tls` feature is enabled), the server serves over TLS
+    /// (rustls) instead of plaintext. Never (de)serialized — key material is
+    /// supplied programmatically by the caller, not via the config file.
+    #[cfg(feature = "tls")]
+    #[serde(skip)]
+    pub tls: Option<TlsConfig>,
 }
 
 impl Default for ServerConfig {
@@ -63,6 +69,8 @@ impl Default for ServerConfig {
         Self {
             host: default_host(),
             port: default_port(),
+            #[cfg(feature = "tls")]
+            tls: None,
         }
     }
 }
@@ -74,7 +82,52 @@ impl ServerConfig {
         Self {
             host: host.into(),
             port,
+            #[cfg(feature = "tls")]
+            tls: None,
         }
+    }
+
+    /// Serve over TLS using the given cert/key material (requires the `tls`
+    /// feature). Replaces the default plaintext serve path.
+    #[cfg(feature = "tls")]
+    #[must_use]
+    pub fn with_tls(mut self, tls: TlsConfig) -> Self {
+        self.tls = Some(tls);
+        self
+    }
+}
+
+/// PEM-encoded TLS material for serving over rustls (requires the `tls`
+/// feature). Construct with [`TlsConfig::from_pem`]; the caller is responsible
+/// for sourcing the cert/key (e.g. the gd `KatanaPlugin` mints a self-signed
+/// backend certificate for the Katana ALB→task hop).
+#[cfg(feature = "tls")]
+#[derive(Clone)]
+#[non_exhaustive]
+pub struct TlsConfig {
+    /// PEM-encoded certificate chain.
+    pub cert_pem: Vec<u8>,
+    /// PEM-encoded PKCS#8 / SEC1 private key.
+    pub key_pem: Vec<u8>,
+}
+
+#[cfg(feature = "tls")]
+impl TlsConfig {
+    /// Build from PEM-encoded certificate-chain and private-key bytes.
+    #[must_use]
+    pub fn from_pem(cert_pem: Vec<u8>, key_pem: Vec<u8>) -> Self {
+        Self { cert_pem, key_pem }
+    }
+}
+
+// Manual Debug so private key material never lands in logs.
+#[cfg(feature = "tls")]
+impl std::fmt::Debug for TlsConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TlsConfig")
+            .field("cert_pem", &"<redacted>")
+            .field("key_pem", &"<redacted>")
+            .finish()
     }
 }
 
