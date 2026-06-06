@@ -189,15 +189,13 @@ mod tls_tests {
             tracing::debug!("rustls crypto provider already installed");
         }
 
-        // Self-signed cert covering localhost + 127.0.0.1.
-        let issued = rcgen::generate_simple_self_signed(vec![
+        // Self-signed cert covering localhost + 127.0.0.1, via the public helper.
+        let tls = crate::config::TlsConfig::self_signed(vec![
             "localhost".to_owned(),
             "127.0.0.1".to_owned(),
         ])
         .expect("generate self-signed cert");
-        let cert_pem = issued.cert.pem().into_bytes();
-        let key_pem = issued.key_pair.serialize_pem().into_bytes();
-        let tls = crate::config::TlsConfig::from_pem(cert_pem.clone(), key_pem);
+        let cert_pem = tls.cert_pem.clone();
 
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();

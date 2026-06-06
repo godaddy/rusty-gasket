@@ -46,16 +46,18 @@ dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
 testing = ["auth", "dep:tower", "dep:bytes"]
 templates = ["dep:minijinja"]
 # Serve over TLS (rustls) instead of plaintext when `ServerConfig.tls` is set.
-# The caller supplies the cert/key PEM (e.g. the gd `KatanaPlugin` mints a
-# self-signed backend cert for the Katana ALB->task hop). Off by default — the
-# plaintext serve path is unchanged.
-tls = ["dep:axum-server"]
+# Provides `TlsConfig::from_pem` (bring your own cert/key) and
+# `TlsConfig::self_signed` (mint one via rcgen, for a backend hop whose peer
+# doesn't verify the cert). Off by default — the plaintext serve path is
+# unchanged.
+tls = ["dep:axum-server", "dep:rcgen"]
 
 [dependencies]
 rusty-gasket-macros = { workspace = true }
 
 axum = { workspace = true }
 axum-server = { workspace = true, optional = true }
+rcgen = { workspace = true, optional = true }
 built = { workspace = true }
 futures-util = { workspace = true }
 governor = { workspace = true, optional = true }
@@ -109,9 +111,8 @@ aws-config = { workspace = true }
 aws-sdk-s3 = { workspace = true }
 aws-credential-types = { version = "1.2", features = ["test-util"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
-# `tls` feature test: mint a self-signed cert (rcgen) and install a rustls
-# crypto provider for the in-test handshake.
-rcgen = "0.13"
+# `tls` feature test: install a rustls crypto provider for the in-test handshake
+# (the self-signed cert itself comes from `TlsConfig::self_signed`).
 rustls = "0.23"
 serial_test = { version = "3", features = ["file_locks"] }
 bytes = { workspace = true }

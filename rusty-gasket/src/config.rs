@@ -98,9 +98,9 @@ impl ServerConfig {
 }
 
 /// PEM-encoded TLS material for serving over rustls (requires the `tls`
-/// feature). Construct with [`TlsConfig::from_pem`]; the caller is responsible
-/// for sourcing the cert/key (e.g. the gd `KatanaPlugin` mints a self-signed
-/// backend certificate for the Katana ALB→task hop).
+/// feature). Construct with [`TlsConfig::from_pem`] (bring your own cert/key) or
+/// [`TlsConfig::self_signed`] (mint one on the spot — handy for a backend hop
+/// whose peer doesn't verify the certificate, e.g. a load-balancer→task leg).
 #[cfg(feature = "tls")]
 #[derive(Clone)]
 #[non_exhaustive]
@@ -117,6 +117,25 @@ impl TlsConfig {
     #[must_use]
     pub fn from_pem(cert_pem: Vec<u8>, key_pem: Vec<u8>) -> Self {
         Self { cert_pem, key_pem }
+    }
+
+    /// Mint a fresh **self-signed** certificate covering `sans` (DNS names and/or
+    /// IP strings) and build a `TlsConfig` from it.
+    ///
+    /// Intended for a backend TLS hop where the peer does **not** verify the
+    /// certificate — e.g. a load-balancer that re-encrypts to the task but
+    /// doesn't validate the chain (AWS ALB target groups, GoDaddy Katana's
+    /// ALB→task leg). Do **not** use it where a client validates the chain. The
+    /// private key is generated in-process and never persisted.
+    ///
+    /// # Errors
+    /// Returns an error if key generation or certificate serialization fails.
+    pub fn self_signed(sans: Vec<String>) -> Result<Self, BoxError> {
+        let issued = rcgen::generate_simple_self_signed(sans)?;
+        Ok(Self::from_pem(
+            issued.cert.pem().into_bytes(),
+            issued.key_pair.serialize_pem().into_bytes(),
+        ))
     }
 }
 
@@ -677,6 +696,21 @@ pub enum StringSetError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "tls")]
+    #[test]
+    fn self_signed_produces_pem_and_sets_tls() {
+        let tls = TlsConfig::self_signed(vec!["localhost".to_owned(), "127.0.0.1".to_owned()])
+            .expect("mint self-signed cert");
+        let cert = String::from_utf8(tls.cert_pem.clone()).expect("utf8 cert");
+        let key = String::from_utf8(tls.key_pem.clone()).expect("utf8 key");
+        assert!(cert.contains("BEGIN CERTIFICATE"), "cert PEM expected");
+        assert!(key.contains("PRIVATE KEY"), "key PEM expected");
+        // Usable as a server's TLS config; Debug must not leak the key.
+        let server = ServerConfig::default().with_tls(tls);
+        assert!(server.tls.is_some());
+        assert!(!format!("{server:?}").contains("PRIVATE KEY"));
+    }
 
     #[test]
     fn environment_parsing() {
