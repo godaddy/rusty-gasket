@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-06-06
+
+### Added
+- **`TlsConfig::self_signed(sans)`** (`tls` feature) — mint a fresh self-signed
+  certificate in-process for a backend TLS hop whose peer doesn't verify the
+  chain (e.g. a load-balancer→task leg), rather than requiring callers to bring
+  their own `rcgen`. Complements `TlsConfig::from_pem`. The private key is
+  generated in-process and never persisted; not for use where a client validates
+  the chain.
+
 ## [0.1.6] - 2026-06-06
 
 ### Added
