@@ -33,6 +33,9 @@ cache = ["dep:moka"]
 cache-redis = ["cache", "dep:redis"]
 cache-memcached = ["cache", "dep:memcache-async"]
 otlp = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk", "dep:tracing-opentelemetry"]
+# Optional sharded-sink-backed observability (lossy, off-request-path logging
+# and audit emission). Off by default; see `observability::ShardedSinkConfig`.
+sharded-sink = ["dep:sharded-sink"]
 
 # Optional batteries (folded-in feature-gated modules)
 auth = ["dep:jsonwebtoken", "dep:reqwest", "dep:url", "dep:arc-swap", "dep:subtle", "dep:base64"]
@@ -67,6 +70,7 @@ memcache-async = { workspace = true, optional = true }
 moka = { workspace = true, optional = true }
 redis = { workspace = true, optional = true }
 secrecy = { workspace = true }
+sharded-sink = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml_ng = { workspace = true }

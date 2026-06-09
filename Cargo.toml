@@ -8,7 +8,7 @@ edition = "2024"
 rust-version = "1.91"
 repository = "https://github.com/godaddy/rusty-gasket"
 homepage = "https://github.com/godaddy/rusty-gasket"
-version = "0.1.7"
+version = "0.1.8"
 license = "Apache-2.0"
 authors = ["Jay Gowdy <jay@godaddy.com>"]
 keywords = ["api", "http", "plugin", "axum", "microservice"]
@@ -91,6 +91,7 @@ rusty-gasket-macros = { version = "0.1.0", path = "rusty-gasket-macros" }
 axum = "0.8"
 axum-server = { version = "0.7", features = ["tls-rustls"] }
 rcgen = "0.13"
+sharded-sink = "0.1"
 aws-config = { version = "1.6", default-features = false, features = ["rustls"] }
 aws-sdk-secretsmanager = { version = "1.93", default-features = false, features = ["rustls", "rt-tokio"] }
 aws-sdk-s3 = { version = "1", default-features = false, features = ["rustls", "rt-tokio"] }

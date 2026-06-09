@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.8] - 2026-06-09
+
+### Added
+- **Optional `sharded-sink`-backed observability** (`sharded-sink` feature, off
+  by default). Lets a service trade a little log/telemetry *retention* for flat
+  producer latency under bursts: records are handed to a sharded, lossy sink and
+  written off the request path instead of inline.
+  - `observability::ShardedSinkConfig` — config (deserializes from a
+    `[observability.sharded_sink]` section), `enabled = false` and `shards = 1`
+    by default (global ordering preserved; raise `shards` to trade ordering for
+    less producer contention).
+  - `observability::init_tracing_sharded` (and `init_tracing_with_otel_sharded`
+    under `otlp`) — same `tracing` format as `init_tracing`, but the formatted
+    log bytes are written through the sink; returns a `ShardedLogGuard` to flush
+    on shutdown. When disabled, behaves exactly like `init_tracing`.
+  - `observability::ShardedAuditLogger::wrap` (with `auth`) — wraps any
+    `AuditLogger` so auth events are emitted off the auth path; returns the inner
+    logger unchanged when disabled.
+  - Documented tradeoffs: drop-under-overload and cross-shard reordering.
 
 ## [0.1.7] - 2026-06-06
 
@@ -339,5 +357,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `#[derive(ApiError)]` for generating `IntoResponse` with structured JSON error bodies
 - `#[api_error(code, status, expose)]` attribute for per-variant configuration
 
-[Unreleased]: https://github.com/godaddy/rusty-gasket/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/godaddy/rusty-gasket/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/godaddy/rusty-gasket/compare/v0.1.7...v0.1.8
 [0.1.0]: https://github.com/godaddy/rusty-gasket/releases/tag/v0.1.0

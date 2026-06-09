@@ -7,6 +7,8 @@
 mod logging;
 pub mod request_id;
 mod security;
+#[cfg(feature = "sharded-sink")]
+mod sharded;
 
 #[cfg(feature = "otlp")]
 pub use logging::init_tracing_with_otel;
@@ -16,3 +18,10 @@ pub use logging::{
 };
 pub use request_id::{CURRENT_REQUEST_ID, RequestId, X_REQUEST_ID, current_request_id};
 pub use security::SecurityJsonFormat;
+
+#[cfg(all(feature = "sharded-sink", feature = "auth"))]
+pub use sharded::ShardedAuditLogger;
+#[cfg(all(feature = "sharded-sink", feature = "otlp"))]
+pub use sharded::init_tracing_with_otel_sharded;
+#[cfg(feature = "sharded-sink")]
+pub use sharded::{ShardedLogGuard, ShardedSinkConfig, init_tracing_sharded};
