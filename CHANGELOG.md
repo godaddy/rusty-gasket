@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Optional `sharded-sink`-backed observability** (`sharded-sink` feature, off
+  by default). Lets a service trade a little log/telemetry *retention* for flat
+  producer latency under bursts: records are handed to a sharded, lossy sink and
+  written off the request path instead of inline.
+  - `observability::ShardedSinkConfig` — config (deserializes from a
+    `[observability.sharded_sink]` section), `enabled = false` and `shards = 1`
+    by default (global ordering preserved; raise `shards` to trade ordering for
+    less producer contention).
+  - `observability::init_tracing_sharded` (and `init_tracing_with_otel_sharded`
+    under `otlp`) — same `tracing` format as `init_tracing`, but the formatted
+    log bytes are written through the sink; returns a `ShardedLogGuard` to flush
+    on shutdown. When disabled, behaves exactly like `init_tracing`.
+  - `observability::ShardedAuditLogger::wrap` (with `auth`) — wraps any
+    `AuditLogger` so auth events are emitted off the auth path; returns the inner
+    logger unchanged when disabled.
+  - Documented tradeoffs: drop-under-overload and cross-shard reordering.
+
 ## [0.1.7] - 2026-06-06
 
 ### Added
