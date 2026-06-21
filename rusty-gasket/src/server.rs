@@ -76,8 +76,23 @@ async fn serve_tls(
 ) -> Result<(), BoxError> {
     use axum_server::Handle;
     use axum_server::tls_rustls::RustlsConfig;
+    use std::sync::Arc;
 
-    let rustls_config = RustlsConfig::from_pem(tls.cert_pem, tls.key_pem).await?;
+    // Terminate TLS on pq-modern-rust-tls: PQ-hybrid (X25519MLKEM768) preferred,
+    // classical secp256r1 fallback so non-PQ clients still connect; TLS 1.3 +
+    // AES-256-GCM only, and hardware AES is required (fails fast otherwise). The
+    // server config is built explicitly rather than from the ambient default
+    // provider, so this posture is scoped to the inbound listener and leaves
+    // outbound clients (AWS SDK, database, OTLP, reqwest) on their own provider.
+    let certs =
+        rustls_pemfile::certs(&mut tls.cert_pem.as_slice()).collect::<Result<Vec<_>, _>>()?;
+    let key = rustls_pemfile::private_key(&mut tls.key_pem.as_slice())?
+        .ok_or("no private key found in the TLS key PEM")?;
+    let server_config = pq_modern_rust_tls::ServerConfigBuilder::new(certs, key)
+        .compat()
+        .with_alpn_protocols(vec![b"h2".to_vec(), b"http/1.1".to_vec()])
+        .build()?;
+    let rustls_config = RustlsConfig::from_config(Arc::new(server_config));
     // Reuse the listener already bound above (so `local_addr` / `ready` saw the
     // real port) by handing axum-server its std equivalent.
     let std_listener = listener.into_std()?;

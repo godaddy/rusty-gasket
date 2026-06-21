@@ -48,12 +48,15 @@ db-mysql = ["dep:sqlx", "sqlx/mysql"]
 dynamodb = ["dep:aws-config", "dep:aws-sdk-dynamodb"]
 testing = ["auth", "dep:tower", "dep:bytes"]
 templates = ["dep:minijinja"]
-# Serve over TLS (rustls) instead of plaintext when `ServerConfig.tls` is set.
-# Provides `TlsConfig::from_pem` (bring your own cert/key) and
-# `TlsConfig::self_signed` (mint one via rcgen, for a backend hop whose peer
-# doesn't verify the cert). Off by default — the plaintext serve path is
-# unchanged.
-tls = ["dep:axum-server", "dep:rcgen"]
+# Serve over TLS when `ServerConfig.tls` is set. The inbound HTTPS listener is
+# terminated by pq-modern-rust-tls: post-quantum hybrid (X25519MLKEM768) by
+# default with a classical secp256r1 fallback, TLS 1.3 + AES-256-GCM only, and
+# HARDWARE AES is required (fails fast on CPUs without AES-NI / ARMv8 Crypto).
+# Scoped to the inbound server only — outbound clients (AWS SDK, DB, OTLP,
+# reqwest) keep their own provider. Bring your own cert via `TlsConfig::from_pem`
+# or mint one with `TlsConfig::self_signed`. Off by default — the plaintext serve
+# path is unchanged.
+tls = ["dep:axum-server", "dep:rcgen", "dep:pq-modern-rust-tls", "dep:rustls-pemfile"]
 
 [dependencies]
 rusty-gasket-macros = { workspace = true }
@@ -61,6 +64,8 @@ rusty-gasket-macros = { workspace = true }
 axum = { workspace = true }
 axum-server = { workspace = true, optional = true }
 rcgen = { workspace = true, optional = true }
+pq-modern-rust-tls = { workspace = true, optional = true }
+rustls-pemfile = { workspace = true, optional = true }
 built = { workspace = true }
 futures-util = { workspace = true }
 governor = { workspace = true, optional = true }
