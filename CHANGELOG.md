@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **TLS server now defaults to post-quantum** (`tls` feature). The inbound HTTPS
+  listener is terminated by
+  [`pq-modern-rust-tls`](https://github.com/godaddy/pq-modern-rust-tls):
+  PQ-hybrid `X25519MLKEM768` preferred with a classical `secp256r1` fallback (so
+  non-PQ clients still connect), TLS 1.3 + AES-256-GCM only. Built explicitly for
+  the inbound listener, so **outbound** clients (AWS SDK, database, OTLP,
+  reqwest) are unchanged and keep talking to non-PQ services. **Hardware AES
+  (AES-NI / ARMv8 Crypto) is now required** for the TLS serve path — it fails
+  fast on CPUs without it.
+
 ## [0.1.8] - 2026-06-09
 
 ### Added
