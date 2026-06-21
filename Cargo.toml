@@ -91,8 +91,8 @@ rusty-gasket-macros = { version = "0.1.0", path = "rusty-gasket-macros" }
 axum = "0.8"
 axum-server = { version = "0.7", features = ["tls-rustls"] }
 rcgen = "0.13"
-# PQ-first TLS for the inbound HTTPS server (feature `tls`). Not yet on crates.io.
-pq-modern-rust-tls = { git = "https://github.com/godaddy/pq-modern-rust-tls", rev = "a14582c21d8fc5a7eb84693504615820f3e16b54" }
+# PQ-first TLS for the inbound HTTPS server (feature `tls`).
+pq-modern-rust-tls = "0.1.0"
 rustls-pemfile = "2"
 sharded-sink = "0.1"
 aws-config = { version = "1.6", default-features = false, features = ["rustls"] }

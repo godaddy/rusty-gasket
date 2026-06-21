@@ -3166,7 +3166,8 @@ dependencies = [
 [[package]]
 name = "pq-modern-rust-tls"
 version = "0.1.0"
-source = "git+https://github.com/godaddy/pq-modern-rust-tls?rev=a14582c21d8fc5a7eb84693504615820f3e16b54#a14582c21d8fc5a7eb84693504615820f3e16b54"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "146243e893514afdba25e466e901cba5160b2da4dcc48b989585f0ee16b0a337"
 dependencies = [
  "aws-lc-rs",
  "hardware-rust-crypto",
